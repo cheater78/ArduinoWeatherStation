@@ -1,0 +1,60 @@
+DATA STORAGE
+############
+
+-> T(128),H(128),P(128),Q(128) -> 512 -> 2x uint8_t [RAW DATA]
+|> T - map(0,127, -63,+64) 											[°C in int]
+|> H - (0,100) [int%] , (101,127) invalid							[% in int]
+|> P - map(0,127,93.7,106.4) [-63,+64 -> /10 -> +100 in kPa]		[xx.1 kPa]
+|> Q - map(0,127,10,95) [0,127 -> /1.5 -> uint -> +10 in 10kOhm]	[Res in 10kOhm]
+
+V2
+
+T -> 2 byte sigend int -3275,8 -0- +3276,8
+H -> 1 byte 1 - 100
+P -> 1 byte 93.7 - 106.4 [-63,+64 -> /10 -> +100 in kPa]
+Q -> 1 byte 10 - 95 [0,127 /1,5 +10 *10k]
+
+t -> 3 byte:
+
+
+39 Data Modes -> 5bit
+
+
+uint8_t storage[8][3][n]
+n .. dataset
+7 .. sensor
+3 .. part of 24bit dataset{730
+0[uint8_t] - 8bit Temp
+1[uint8_t] - 2bit Temp + 2bit NULL + 4bit Hum
+2[uint8_t] - 4bit Pres + 4bit AirQua
+}
+
+Sampling[
+hour%A == 0 && minute%B == 0
+]
+
+
+Duration[
+1d
+3d
+5d
+7d
+14d
+30d/1m
+2m
+3m
+6m
+12m/1y
+]
+
+
+Slot[0]	Samp[1-3]			Dur[]
+[0-7] 	[0-59]->{A,B,C,D}	[]
+
+TT
+99
+T
+101
+N
+1016
+H

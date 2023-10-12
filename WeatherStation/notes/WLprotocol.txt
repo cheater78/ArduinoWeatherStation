@@ -1,0 +1,120 @@
+FUNCTIONALITY
+##############################################################################
+-----------
+INIT STATE:
+
+MASTER[FIXED ADRESS] -> ASYNC LISTEN -> DISPLAYS DATA | REGISTERS NEW DEVICES
+  VARS: ADRESS
+
+SLAVE[FIXED ADRESS] -> SENDS WHOAMI
+  VARS: ADRESS
+
+=> LOOP
+
+-------------------
+REGISTER PROCEDURE:
+
+SLAVE -> SEND -> WHOAMI[rng.send]
+  VARS:ADRESS
+	   rng
+
+MASTER -> READS WHOAMI -> LOOKUP DEVICES[].length
+  +VARS: ID = DEVICES[].length+1
+		 NAME = INPUT
+
+MASTER -> SEND -> REGISTER[rng,ID]				; ADD ID,NAME To DEVICES
+  VARS: ADRESS
+		~rng
+		ID
+		NAME
+
+ALL SLAVES IN WHOAMI STATE -> if(Srng == Mrng) -> MYID = MID
+  VARS: ID
+		NAME
+		~rng
+		
+		
+		
+-----------
+DATA STATE:
+
+SLAVE -> SEND -> ID + DATA
+
+MASTER -> READ -> ID + DATA
+MASTER -> DISP -> NAME[ID] + FORMAT(DATA)
+
+=> LOOP
+
+
+---------------------------
+REMOVE PROCEDURE SLAVESIDE:
+
+SLAVE -> SEND -> ID REMOVE
+
+MASTER -> READ -> ID REMOVE
+MASTER -> DEVICES[ID].remove()
+MASTER -> SEND OK
+
+SLAVE -> READ -> OK
+SLAVE -> reset(WHOAMI)
+
+----------------------------
+REMOVE PROCEDURE MASTERSIDE:
+
+MASTER -> SEND -> ID REMOVE
+
+-> SLAVESIDE PROCEDURE
+
+##################################################################
+NOTES:
+
+RF-ADRESS: fixed or Hardware selected
+
+Slave has ID,DATA
+Master has Slaves ID,NAME,DATA
+
+Commands:
+-SLAVE:
+
+--WHOAMI(rng)			
+--SENDDATA(id,data)
+--RESET(id)
+
+-MASTER:
+
+--SETID(rng)
+--RESET(ID)
+
+
+COMMAND
+
+0x55AA
+
+FUNCTION
+
+WAI 		: 0xFFFF
+SETID 		: 0xFFF0
+SENDDATA	: 0x0A0A
+RESET		: 0x0000
+
+DATA
+rng uint16_t
+ID  uint8_t
+data 4x uint32_t
+
+in BYTES[22] -> uint8_t data[21]
+
+APPLYFORREG S->M
+0x5A 0xFF 0xXXXX - rng
+
+REGDONE M->S
+0x5A 0xF0 0xXXXX 0x00XX - rng,id
+
+DATA S->M
+0x5A 0x0A 0x00XX 0xXXXXXXXX 0xXXXXXXXX 0xXXXXXXXX 0xXXXXXXXX - id,T,H,P,G
+
+RESET BIDIRECTIONAL
+0x5A 0x00 0x00XX - id
+
+-> Message End 0xA5
+
